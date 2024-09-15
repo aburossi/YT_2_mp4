@@ -1,45 +1,35 @@
+import yt_dlp
 import streamlit as st
-from pytube import YouTube
-import os
-import re
 
-# Function to validate YouTube URL
-def is_valid_youtube_url(url):
-    youtube_regex = re.compile(
-        r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/.+')
-    return youtube_regex.match(url) is not None
-
-# Title of the Streamlit app
-st.title('YouTube to MP4 Downloader')
-
-# Input field for YouTube URL
 video_url = st.text_input('Enter YouTube video URL')
 
 if st.button('Download MP4'):
-    if not video_url:
-        st.error("Please enter a YouTube video URL.")
-    elif not is_valid_youtube_url(video_url):
-        st.error("Please enter a valid YouTube URL.")
-    else:
+    if video_url:
         try:
-            # Get video object from pytube
-            yt = YouTube(video_url)
-            stream = yt.streams.get_highest_resolution()
+            # Set up download options
+            ydl_opts = {
+                'format': 'best',
+                'outtmpl': '/tmp/%(title)s.%(ext)s',
+            }
 
-            # Download the video to a temp location
-            video_path = stream.download()
+            # Download video
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info_dict = ydl.extract_info(video_url, download=True)
+                video_title = info_dict.get('title', None)
 
-            # Provide download button for the user
+            # Path to downloaded video
+            video_path = f"/tmp/{video_title}.mp4"
+
+            # Provide download button
             with open(video_path, 'rb') as file:
                 st.download_button(
                     label="Download MP4",
                     data=file,
-                    file_name=f"{yt.title}.mp4",
+                    file_name=f"{video_title}.mp4",
                     mime="video/mp4"
                 )
 
-            # Optionally, clean up the file after download
-            os.remove(video_path)
-
         except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
+            st.error(f"Error downloading video: {e}")
+    else:
+        st.warning("Please enter a valid YouTube URL.")
