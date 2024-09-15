@@ -1,2 +1,2 @@
-pytube
-yt_dpl
+streamlit
+yt-dlp
