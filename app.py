@@ -1,6 +1,13 @@
 import streamlit as st
 from pytube import YouTube
 import os
+import re
+
+# Function to validate YouTube URL
+def is_valid_youtube_url(url):
+    youtube_regex = re.compile(
+        r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/.+')
+    return youtube_regex.match(url) is not None
 
 # Title of the Streamlit app
 st.title('YouTube to MP4 Downloader')
@@ -9,17 +16,20 @@ st.title('YouTube to MP4 Downloader')
 video_url = st.text_input('Enter YouTube video URL')
 
 if st.button('Download MP4'):
-    if video_url:
+    if not video_url:
+        st.error("Please enter a YouTube video URL.")
+    elif not is_valid_youtube_url(video_url):
+        st.error("Please enter a valid YouTube URL.")
+    else:
         try:
             # Get video object from pytube
             yt = YouTube(video_url)
-            # Select the highest resolution stream available
             stream = yt.streams.get_highest_resolution()
 
             # Download the video to a temp location
             video_path = stream.download()
 
-            # Once downloaded, provide a download button for the user
+            # Provide download button for the user
             with open(video_path, 'rb') as file:
                 st.download_button(
                     label="Download MP4",
@@ -32,7 +42,4 @@ if st.button('Download MP4'):
             os.remove(video_path)
 
         except Exception as e:
-            st.error(f"Error: {str(e)}")
-    else:
-        st.warning('Please enter a valid YouTube URL.')
-
+            st.error(f"An error occurred: {str(e)}")
