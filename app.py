@@ -10,6 +10,7 @@ if st.button('Download MP4'):
             ydl_opts = {
                 'format': 'best',
                 'outtmpl': '/tmp/%(title)s.%(ext)s',
+                'cookiefile': '/path_to_your_cookies/cookies.txt',  # Path to your exported cookies
             }
 
             # Download video
