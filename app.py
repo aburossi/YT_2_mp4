@@ -1,35 +1,55 @@
-import yt_dlp
+import re
+from yt_dlp import YoutubeDL
 import streamlit as st
 
-video_url = st.text_input('Enter YouTube video URL')
+# Function to sanitize filenames
+def sanitize_filename(filename):
+    # Remove invalid characters for Windows filenames
+    return re.sub(r'[\\/*?:"<>|]', "", filename)
 
-if st.button('Download MP4'):
-    if video_url:
-        try:
-            # Set up download options
-            ydl_opts = {
-                'format': 'best',
-                'outtmpl': '/tmp/%(title)s.%(ext)s',
-            }
+# Function to download YouTube videos
+def download_video(url):
+    try:
+        # Extract video information without downloading
+        ydl_opts = {'quiet': True, 'no_warnings': True}
+        with YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(url, download=False)
+            title = sanitize_filename(info_dict.get('title', 'video'))
 
-            # Download video
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info_dict = ydl.extract_info(video_url, download=True)
-                video_title = info_dict.get('title', None)
+        # Set up the download options
+        ydl_opts = {
+            'format': 'best[ext=mp4]',  # Best available MP4 format
+            'quiet': True,
+            'no_warnings': True,
+            'outtmpl': f'{title}.mp4',  # Save video as the sanitized title
+        }
 
-            # Path to downloaded video
-            video_path = f"/tmp/{video_title}.mp4"
+        # Download the video to a temporary file
+        with YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
 
-            # Provide download button
-            with open(video_path, 'rb') as file:
-                st.download_button(
-                    label="Download MP4",
-                    data=file,
-                    file_name=f"{video_title}.mp4",
-                    mime="video/mp4"
-                )
+        # Read the downloaded file and allow the user to download it via Streamlit
+        with open(f"{title}.mp4", "rb") as file:
+            st.download_button(
+                label="Download video",
+                data=file,
+                file_name=f"{title}.mp4",
+                mime="video/mp4"
+            )
+        st.success(f"Video '{title}' downloaded successfully!")
 
-        except Exception as e:
-            st.error(f"Error downloading video: {e}")
+    except Exception as e:
+        st.error(f"An error occurred: {str(e)}")
+
+# Streamlit app layout
+st.title("YouTube Video Downloader")
+
+# Input field for YouTube URL
+url = st.text_input("Enter YouTube URL:")
+
+# Download button
+if st.button("Download"):
+    if url.strip():
+        download_video(url)
     else:
-        st.warning("Please enter a valid YouTube URL.")
+        st.error("Please enter a valid YouTube URL.")
