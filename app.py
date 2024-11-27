@@ -2,6 +2,9 @@ import re
 from yt_dlp import YoutubeDL
 import streamlit as st
 
+# Set page config
+st.set_page_config(page_title="Video-Dowloader", page_icon="🎦")
+
 # Function to sanitize filenames
 def sanitize_filename(filename):
     # Remove invalid characters for Windows filenames
